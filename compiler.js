@@ -1,9 +1,32 @@
+var convertPitch = function(pitch) {
+  if(typeof(pitch) === 'string' && pitch.length === 2) {
+    var octave = parseInt(pitch[1], 10);
+    var letterPitch = "c d ef g a b".indexOf(pitch[0]);
+    return 12 + 12 * octave + letterPitch;
+  }
+};
+
 var endTime = function (time, expr) {
+  // repeat
+  if(expr.tag === 'repeat') {
+      var section = expr.section;
+      var count = expr.count;
+      return time + (count * endTime(section));
+  }
+
+  // regular note
   if(expr.tag === 'note') {
     return expr.dur + time;
   }
 
+  // rest
+  if(expr.tag === 'rest') {
+    return expr.duration + time; 
+  }
+
   var left, right;
+
+  // parallel
   if(expr.tag === 'par') {
     left = expr.left;
     right = expr.right;
@@ -24,16 +47,36 @@ var compile = function (musexpr) {
 };
 
 var compilePart = function(notes, expr, startTime) {
+  // repeat
+  if(expr.tag === 'repeat') {
+    var section = expr.section;
+    var count = expr.count;
+    for(var i=0; i<count; i++) {
+      compilePart(notes, section, startTime);
+      startTime = endTime(startTime, section);
+    }
+    return notes;
+  }
+  // regular note
   if(expr.tag === 'note') {
     notes.push({
         tag: 'note',
-        pitch: expr.pitch,
+        pitch: convertPitch(expr.pitch),
         start: startTime,
         dur: expr.dur
     });
     return notes;
   }
-  // parallel
+  // rest note
+  if(expr.tag === 'rest') {
+    notes.push({
+      tag: 'note',
+      start: startTime,
+      dur: expr.duration
+    });
+    return notes;
+  }
+  // parallel notes
   var left, right;
   if(expr.tag === 'par') {
     left = expr.left;
@@ -43,10 +86,23 @@ var compilePart = function(notes, expr, startTime) {
     startTime = endTime(startTime, expr);
     return notes;
   }
-  // sequence
+  // notes in sequence
   left = expr.left;
   right = expr.right;
   notes = compilePart(notes, left, startTime);
   startTime = endTime(startTime, left);
   return compilePart(notes, right, startTime);
 };
+
+var melody_mus = 
+  { tag: 'seq',
+    left: 
+     { tag: 'seq',
+       left: { tag: 'note', pitch: 'a4', dur: 250 },
+       right: { tag: 'note', pitch: 'b4', dur: 250 } },
+    right:
+     { tag: 'seq',
+       left: { tag: 'note', pitch: 'c4', dur: 500 },
+       right: { tag: 'note', pitch: 'd4', dur: 500 } } };
+
+console.log(compile(melody_mus));

@@ -1,3 +1,6 @@
+/*
+  A function that converts a pitch to a melody
+*/
 var convertPitch = function(pitch) {
   if(typeof(pitch) === 'string' && pitch.length === 2) {
     var octave = parseInt(pitch[1], 10);
@@ -6,6 +9,9 @@ var convertPitch = function(pitch) {
   }
 };
 
+/*
+  A function that computes the endTime for a musical expression, given its start time.
+*/
 var endTime = function (time, expr) {
   // repeat
   if(expr.tag === 'repeat') {
@@ -13,26 +19,21 @@ var endTime = function (time, expr) {
       var count = expr.count;
       return time + (count * endTime(section));
   }
-
   // regular note
   if(expr.tag === 'note') {
     return expr.dur + time;
   }
-
   // rest
   if(expr.tag === 'rest') {
     return expr.duration + time; 
   }
-
   var left, right;
-
   // parallel
   if(expr.tag === 'par') {
     left = expr.left;
     right = expr.right;
     return time + Math.max(endTime(time, left), endTime(time, right));
   }
-
   // sequence
   left = expr.left;
   var leftTime = endTime(time, left);
@@ -40,12 +41,9 @@ var endTime = function (time, expr) {
   return endTime(leftTime, right);
 };
 
-var compile = function (musexpr) {
-  var notes = [];
-  var startTime = 0;
-  return compilePart(notes, musexpr, startTime);
-};
-
+/*
+  A function that recursively computes parts of a musical expression to notes.
+*/
 var compilePart = function(notes, expr, startTime) {
   // repeat
   if(expr.tag === 'repeat') {
@@ -94,7 +92,19 @@ var compilePart = function(notes, expr, startTime) {
   return compilePart(notes, right, startTime);
 };
 
-var melody_mus = 
+/*
+  A funtion that compiles musical expressions to notes.
+*/
+var compile = function (musexpr) {
+  var notes = [];
+  var startTime = 0;
+  return compilePart(notes, musexpr, startTime);
+};
+
+/*
+  Test musical expression
+*/
+var melody = 
   { tag: 'seq',
     left: 
      { tag: 'seq',
@@ -105,4 +115,4 @@ var melody_mus =
        left: { tag: 'note', pitch: 'c4', dur: 500 },
        right: { tag: 'note', pitch: 'd4', dur: 500 } } };
 
-console.log(compile(melody_mus));
+console.log(compile(melody));

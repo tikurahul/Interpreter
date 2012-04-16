@@ -49,7 +49,7 @@ var compilePart = function(notes, expr, startTime) {
   if(expr.tag === 'repeat') {
     var section = expr.section;
     var count = expr.count;
-    for(var i=0; i<count; i++) {
+    for(var i=0; i < count; i++) {
       compilePart(notes, section, startTime);
       startTime = endTime(startTime, section);
     }
